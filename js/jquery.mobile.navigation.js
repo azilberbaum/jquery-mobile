@@ -390,20 +390,21 @@
 		//get current scroll distance
 		var currScroll = $window.scrollTop(),
 			toScroll	= toPage.data( "lastScroll" ) || 0;
-		
-		$.mobile.silentScroll();
 
 		if( fromPage ) {
+			
 			//set as data for returning to that spot
 			fromPage
-				.height( screen.height )
+				.css( "min-height", currScroll + screen.height )
 				.jqmData( "lastScroll", currScroll )
 				.jqmData( "lastClicked", $activeClickedLink );
 			//trigger before show/hide events
 			fromPage.data( "page" )._trigger( "beforehide", null, { nextPage: toPage } );
 		}
+		
+		
 		toPage
-			.height( toScroll )
+			.css({ "min-height": toScroll + screen.height, "top": currScroll })
 			.data( "page" )._trigger( "beforeshow", null, { prevPage: fromPage || $( "" ) } );
 
 		//clear page loader
@@ -417,19 +418,28 @@
 
 		promise.done(function() {
 			//jump to top or prev scroll, sometimes on iOS the page has not rendered yet.
-			$.mobile.silentScroll( toPage.jqmData( "lastScroll" ) || 0 );
+			$.mobile.silentScroll( toScroll );
 			$( document ).one( "silentscroll", function() { reFocus( toPage ); } );
 
 			//trigger show/hide events
 			if( fromPage ) {
-				fromPage.width("").height("").data( "page" )._trigger( "hide", null, { nextPage: toPage } );
+				fromPage
+					.css( "min-height", screen.height )
+					.data( "page" )._trigger( "hide", null, { nextPage: toPage } );
 			}
 			//trigger pageshow, define prevPage as either fromPage or empty jQuery obj
-			toPage.width("").height("").data( "page" )._trigger( "show", null, { prevPage: fromPage || $( "" ) } );
-
+			toPage.css( "top", "" ).data( "page" )._trigger( "show", null, { prevPage: fromPage || $( "" ) } );
+			
+			resetActivePageHeight();
 		});
 
 		return promise;
+	}
+	
+	//simply set the active page's minimum height to screen height, depending on orientation
+	function resetActivePageHeight(){
+		var height = jQuery.event.special.orientationchange.orientation() == "portrait" ? screen.height : screen.width;
+		$( ".ui-page-active" ).css( "min-height", height );
 	}
 
 	//shared page enhancements
@@ -1080,5 +1090,8 @@
 			$.mobile.changePage( $.mobile.firstPage, { transition: transition, changeHash: false, fromHashChange: true } );
 		}
 	});
+	
+	//set page min-heights to be device specific
+	$( document ).bind( "pagecreate orientationchange", resetActivePageHeight );
 
 })( jQuery );
