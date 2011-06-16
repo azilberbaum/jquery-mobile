@@ -175,7 +175,9 @@
 
 			//set location hash to path
 			set: function( path ) {
-				location.hash = path;
+				if( !$.support.pushState ){
+					location.hash = path;
+				}
 			},
 
 			//test if a given url (string) is a path
@@ -1023,7 +1025,13 @@
 
 			//this may need to be more specific as we use data-rel more
 			role = $link.attr( "data-" + $.mobile.ns + "rel" ) || "page";
-
+		
+		//set pushstate
+		if( $.support.pushState ){
+			history.pushState({}, document.title, href );
+			popStateEnabled = true;
+		}
+		
 		$.mobile.changePage( href, { transition: transition, reverse: reverse, role: role } );
 		event.preventDefault();
 	});
@@ -1042,7 +1050,7 @@
 		}	
 
 		//if listening is disabled (either globally or temporarily), or it's a dialog hash
-		if( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) {
+		if(  e.type !== "popstate" && ( !$.mobile.hashListeningEnabled || urlHistory.ignoreNextHashChange ) ) {
 			urlHistory.ignoreNextHashChange = false;
 			return;
 		}
@@ -1070,12 +1078,6 @@
 				// to a dialog use the dialog objected saved in the stack
 				urlHistory.directHashChange({	currentUrl: to, isBack: setTo, isForward: setTo	});
 			}
-		}
-		else if( e.type !== "popstate" && to.indexOf( dialogHashKey ) < 0 && to.indexOf( "&" + $.mobile.subPageUrlKey ) < 0  ){
-			var url = path.stripHash( location.hash );
-			popStateEnabled = true;
-			history.replaceState({ "url": url }, document.title, url );
-			return;
 		}
 		
 		if( to.indexOf( dialogHashKey ) > -1){
