@@ -390,21 +390,25 @@
 		//get current scroll distance
 		var currScroll = $window.scrollTop(),
 			toScroll	= toPage.data( "lastScroll" ) || 0;
-
+		
+		if(	currScroll || toScroll ){
+			$.mobile.silentScroll( toScroll );
+		}
+		
 		if( fromPage ) {
 			
 			//set as data for returning to that spot
 			fromPage
-				.css( "min-height", currScroll + screen.height )
+				.css( "min-height", currScroll +  screen.height )
+				.css( "top", toScroll -currScroll )
 				.jqmData( "lastScroll", currScroll )
 				.jqmData( "lastClicked", $activeClickedLink );
 			//trigger before show/hide events
 			fromPage.data( "page" )._trigger( "beforehide", null, { nextPage: toPage } );
 		}
-		
-		
+				
 		toPage
-			.css({ "min-height": toScroll + screen.height, "top": currScroll })
+			.css({ "min-height": toScroll + screen.height, "top": 0 })
 			.data( "page" )._trigger( "beforeshow", null, { prevPage: fromPage || $( "" ) } );
 
 		//clear page loader
@@ -415,11 +419,13 @@
 		//call the handler immediately to kick-off the transition.
 		var th = $.mobile.transitionHandlers[transition || "none"] || $.mobile.defaultTransitionHandler,
 			promise = th( transition, reverse, toPage, fromPage );
-
+			
+	
+			
 		promise.done(function() {
 			//jump to top or prev scroll, sometimes on iOS the page has not rendered yet.
-			$.mobile.silentScroll( toScroll );
-			$( document ).one( "silentscroll", function() { reFocus( toPage ); } );
+			
+			 reFocus( toPage );
 
 			//trigger show/hide events
 			if( fromPage ) {
